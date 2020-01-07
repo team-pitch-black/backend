@@ -1,8 +1,10 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from uuid import uuid4
 
 # Create your models here.
 class CustomUser(AbstractUser):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     location = None
     items = []
     
@@ -10,22 +12,30 @@ class CustomUser(AbstractUser):
         return self.username
 
     def move_up(self):
-        pass
+        self.location.player_departed(self)
+        self.location = self.location.room_up
+        self.location.player_entered(self)
 
     def move_down(self):
-        pass
+        self.location.player_departed(self)
+        self.location = self.location.room_down
+        self.location.player_entered(self)
       
     def move_right(self):
-        pass
+        self.location.player_departed(self)
+        self.location = self.location.room_right
+        self.location.player_entered(self)
     
     def move_left(self):
-        pass
+        self.location.player_departed(self)
+        self.location = self.location.room_left
+        self.location.player_entered(self)
 
 
     def grab_item(self, item):
         self.items.append(item)
     
     def drop_item(self, item):
-        self.items.pop(self.items.index(item))
+        self.items.remove(item)
 
 
