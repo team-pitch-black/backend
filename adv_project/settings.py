@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'adventure',
     'api',
+    'users',
     'corsheaders',
     'rest_framework',
     'rest_framework.authtoken',
@@ -127,6 +128,8 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ),
 }
+
+AUTH_USER_MODEL = 'users.CustomUser'
 
 CORS_ORIGIN_ALLOW_ALL=True
 
