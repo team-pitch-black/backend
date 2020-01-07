@@ -173,7 +173,7 @@ class World:
         self.height = size_y
         room_count = 1
         for i in range( len(self.grid) ):
-            self.grid[i] = [None] * size_x
+            self.grid[i] = [0] * size_x
 
         # Start from middle
         x = size_x // 2
@@ -194,6 +194,7 @@ class World:
             
             # If no room there already
             if current_room[f"room_{direction}"] == 0:
+                print(f"room_{direction}")
                 room_count += 1
                 new_room = Room(id = room_count, grid_x = new_x, grid_y = new_y)
                 current_room.connect_rooms(new_room, direction)
@@ -204,10 +205,13 @@ class World:
                 # print(current_room.id, current_room[f"room_{direction}"], '|', new_room.id, new_room[f"room_{reverse_dir}"])
             else:
                 # Room already exists, let's link it
+                print("Room exists")
                 new_room_id = current_room[f"room_{direction}"]
                 new_room = current_room.get_by_id(new_room_id)
                 current_room.connect_rooms(new_room, direction)
 
+            # current_room.save()
+            # new_room.save()
             current_room = new_room
             x = new_x
             y = new_y
@@ -220,7 +224,19 @@ class World:
         '''
         Print the rooms in room_grid in ascii characters.
         '''
-        pass
+
+        reverse_grid = list(self.grid) # make a copy of the list
+        reverse_grid.reverse()
+
+        for row in reverse_grid:
+            for room in row:
+                if room != 0:
+                    print(str(room).zfill(2), end=" ")
+                else:
+                    print("  ", end=" ")
+            print()
+
+
         # # Add top border
         # str = "# " * ((3 + self.width * 5) // 2) + "\n"
 
@@ -273,7 +289,7 @@ class World:
 
 w = World()
 num_rooms = 44
-width = 8
-height = 7
+width = 15
+height = 15
 w.generate_rooms(width, height, num_rooms)
 w.print_rooms()
