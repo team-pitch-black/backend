@@ -194,7 +194,7 @@ class World:
             
             # If no room there already
             if current_room[f"room_{direction}"] == 0:
-                print(f"room_{direction}")
+                print(f"room_{direction}, room number = {current_room[f'room_{direction}']}")
                 room_count += 1
                 new_room = Room(id = room_count, grid_x = new_x, grid_y = new_y)
                 current_room.connect_rooms(new_room, direction)
