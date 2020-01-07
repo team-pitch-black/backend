@@ -39,9 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'adventure',
+    # 'users',
     'api',
-    'users',
-    'rooms',
     'corsheaders',
     'rest_framework',
     'rest_framework.authtoken',
@@ -130,7 +129,8 @@ REST_FRAMEWORK = {
     ),
 }
 
-AUTH_USER_MODEL = 'users.CustomUser'
+# we were using this until we decided to merge our CustomUser into adventure/models.py
+# AUTH_USER_MODEL = 'users.CustomUser'
 
 CORS_ORIGIN_ALLOW_ALL=True
 
