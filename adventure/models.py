@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from users.models import CustomUser
+# from users.models import CustomUser
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
@@ -48,10 +48,10 @@ class Room(models.Model):
         self.save()
 
     def playerNames(self, currentPlayerID):
-        return [p.user.username for p in Player.objects.filter(current_room=self.id) if p.id != int(currentPlayerID)]
+        return [p.user.username for p in Player.objects.filter(location=self.id)] #if p.id != int(currentPlayerID)
 
     def playerUUIDs(self, currentPlayerID):
-        return [p.uuid for p in Player.objects.filter(current_room=self.id) if p.id != int(currentPlayerID)]
+        return [p.uuid for p in Player.objects.filter(location=self.id)] #if p.id != int(currentPlayerID)
     #####################################################
 
     def player_entered(self, player):
@@ -80,20 +80,20 @@ class Room(models.Model):
 
 
 class Player(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     uuid = models.UUIDField(default=uuid4, unique=True, editable=False)
-    current_room = models.IntegerField(default=0)
+    location = models.IntegerField(default=1)
     items = []
     
     ############# These were provided ###############
     def initialize(self):
-        if self.current_room == 0:
-            self.current_room = Room.objects.first().id
+        if self.location == 1:
+            self.location = Room.objects.first().id
             self.save()
     
     def room(self):
         try:
-            return Room.objects.get(id=self.current_room)
+            return Room.objects.get(id=self.location)
         except Room.DoesNotExist:
             self.initialize()
             return self.room()
@@ -103,6 +103,13 @@ class Player(models.Model):
 
     # def __str__(self):
     #     return self.username
+
+    # Get the room object from the location integer
+    def get_room(self, id):
+        return Room.objects.get(id=self.location)
+
+    def get_items(self):
+        return Item.objects.filter(player_id=self.id)
 
     def move_up(self):
         self.location.player_departed(self)
@@ -144,7 +151,7 @@ def save_user_player(sender, instance, **kwargs):
 class Item(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     name = models.CharField(max_length=50, default="ITEM")
-
+    player_id = models.CharField(max_length=50, default=None)
 
 
 class World:
@@ -180,35 +187,35 @@ class World:
         y = size_y // 2
 
         # While there are rooms to be created...
-        current_room = Room(id = 1, grid_x = x, grid_y = y)
+        location = Room(id = 1, grid_x = x, grid_y = y)
         self.grid[y][x] = 1
 
         while room_count < num_rooms:
             while True:
                 offset = {"up": [0,1], "down": [0,-1], "left": [-1,0], "right": [1,0]}
-                direction = random_direction(current_room)
+                direction = random_direction(location)
                 new_x = x + offset[direction][0]
                 new_y = y + offset[direction][1]
                 if (new_x < size_x and new_x > 0) and (new_y < size_y and new_y > 0):
                     break
             
             # If no room there already
-            if current_room[f"room_{direction}"] == 0:
+            if location[f"room_{direction}"] == 0:
                 room_count += 1
                 new_room = Room(id = room_count, grid_x = new_x, grid_y = new_y)
-                current_room.connect_rooms(new_room, direction)
+                location.connect_rooms(new_room, direction)
                 self.grid[new_y][new_x] = room_count
-                # print(f"{current_room.grid_x}, {current_room.grid_y} | {new_room.grid_x}, {new_room.grid_y}")
+                # print(f"{location.grid_x}, {location.grid_y} | {new_room.grid_x}, {new_room.grid_y}")
                 # reverse_dirs = {"up": "down", "down": "up", "right": "left", "left": "right"}
                 # reverse_dir = reverse_dirs[direction]
-                # print(current_room.id, current_room[f"room_{direction}"], '|', new_room.id, new_room[f"room_{reverse_dir}"])
+                # print(location.id, location[f"room_{direction}"], '|', new_room.id, new_room[f"room_{reverse_dir}"])
             else:
                 # Room already exists, let's link it
-                new_room_id = current_room[f"room_{direction}"]
-                new_room = current_room.get_by_id(new_room_id)
-                current_room.connect_rooms(new_room, direction)
+                new_room_id = location[f"room_{direction}"]
+                new_room = location.get_by_id(new_room_id)
+                location.connect_rooms(new_room, direction)
 
-            current_room = new_room
+            location = new_room
             x = new_x
             y = new_y
 
