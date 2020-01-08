@@ -198,7 +198,7 @@ class World:
                     new_room = Room(id=self.room_count,
                                     room_type=1, grid_x=x, grid_y=y)
                     new_room.save()
-                    self.current_room.connect_rooms(new_room, "right")
+                    self.current_room.connect_rooms(new_room, "up")
                     self.current_room = new_room
                 else:
                     self.current_room = self.current_room.get_by_id(

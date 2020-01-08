@@ -1,3 +1,11 @@
 {
-    "python.pythonPath": "/Users/michael/.local/share/virtualenvs/backend-QWiN1uj_/bin/python"
+    "python.pythonPath": "/Users/michael/.local/share/virtualenvs/backend-QWiN1uj_/bin/python",
+    "sqltools.connections": [
+        {
+            "database": "${workspaceFolder}/db.sqlite3",
+            "dialect": "SQLite",
+            "name": "LambdaMUD"
+        }
+    ],
+    "sqltools.useNodeRuntime": true
 }
