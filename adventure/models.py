@@ -1,13 +1,14 @@
 from django.db import models
+from django.contrib.postgres.fields import ArrayField
 from django.contrib.auth.models import User
 from users.models import CustomUser
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
-# from rest_framework import serializers
 from uuid import uuid4
 import random
 import math
+import json
 
 class Room(models.Model):
     id = models.IntegerField(primary_key=True, default=0)
@@ -20,15 +21,16 @@ class Room(models.Model):
     room_right = models.IntegerField(default=0)
     room_left = models.IntegerField(default=0)
     players = []
+    players_list = models.TextField(default=json.dumps({}))
     items = []
+    items_list = models.TextField(default=json.dumps({}))
     grid_x = models.IntegerField(default=None)
     grid_y = models.IntegerField(default=None)
 
     # def __repr__(self):
     #     pass
 
-    def __getitem__(self, x):
-        return getattr(self, x)
+
 
     ################ These were provided ################
     def get_room_in_direction(self, direction):
@@ -62,9 +64,13 @@ class Room(models.Model):
 
     def player_entered(self, player):
         self.players.append(player)
+        self.players_list = json.dumps([player.user.username for player in players])
+        self.save()
 
     def player_departed(self, player):
         self.players.remove(player)
+        self.players_list = json.dumps([player.user.username for player in players])
+        self.save()
 
     def add_item(self, item):
         self.items.append(item)

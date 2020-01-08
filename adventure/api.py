@@ -13,8 +13,11 @@ import json
 # instantiate pusher
 # pusher = Pusher(app_id=config('PUSHER_APP_ID'), key=config('PUSHER_KEY'), secret=config('PUSHER_SECRET'), cluster=config('PUSHER_CLUSTER'))
 
-def get_serialized():
-    queryset = Room.objects.all()
+def get_serialized(room_id=None):
+    if room_id:
+        queryset = Room.objects.filter(id=room_id)
+    else:
+        queryset = Room.objects.all()
     serializer = RoomSerializer(queryset, many=True)
     data = serializer.data
     return data
@@ -24,13 +27,13 @@ class RoomSerializer(serializers.ModelSerializer):
         model = Room
         name = "rooms"
         ordering = ['id',]
-        fields = ['id', 'room_type', 'room_up', 'room_down', 'room_left', 'room_right', 'players', 'items', 'grid_x', 'grid_y']
+        fields = ['id', 'room_type', 'room_up', 'room_down', 'room_left', 'room_right', 'players_list', 'items_list', 'grid_x', 'grid_y']
 
 
 @api_view(["GET"])
 @permission_classes((permissions.AllowAny,))
-def get_map(request):
-    rooms = get_serialized()
+def get_map(request, room_id=None):
+    rooms = get_serialized(room_id)
     print(rooms)
     return JsonResponse({ 'rooms': rooms })
 
