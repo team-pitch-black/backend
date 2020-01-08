@@ -14,21 +14,23 @@ import json
 # instantiate pusher
 # pusher = Pusher(app_id=config('PUSHER_APP_ID'), key=config('PUSHER_KEY'), secret=config('PUSHER_SECRET'), cluster=config('PUSHER_CLUSTER'))
 
-# def get_serialized(room_id=None):
-#     if room_id:
-#         queryset = Room.objects.filter(id=room_id)
-#     else:
-#         queryset = Room.objects.all()
-#     serializer = RoomSerializer(queryset, many=True)
-#     data = serializer.data
-#     return data
+@api_view(["POST"])
+def create_world(request):
+    w = World()
+    w.generate_rooms(25, 25, 100)
+    response = []
+    rooms = list(Room.objects.all())
+    for room in rooms:
+        response.append({
+            'id': room.id,
+            'room_type': room.room_type,
+            'grid_x': room.grid_x,
+            'grid_y': room.grid_y,
+            'players': room.playerNames(),
+            'items': []
+        })
 
-# class RoomSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Room
-#         name = "rooms"
-#         ordering = ['id',]
-#         fields = ['id', 'room_type', 'room_up', 'room_down', 'room_left', 'room_right', 'players_list', 'items_list', 'grid_x', 'grid_y']
+    return JsonResponse(response, safe=False)
 
 
 @api_view(["GET"])
@@ -40,7 +42,6 @@ def get_map(request, room_id=None):
         rooms = list(Room.objects.all())
     response = []
     for room in rooms:
-        print(room.id, room.playerNames())
         response.append({
             'id': room.id,
             'room_type': room.room_type,

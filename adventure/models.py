@@ -272,17 +272,3 @@ class World:
                 else:
                     print("   ", end=" ")
             print()
-
-# To be connected to API...
-
-
-def generate_world():
-    w = World()
-    num_rooms = 100
-    width = 25
-    height = 25
-    w.generate_rooms(width, height, num_rooms)
-    w.print_rooms()
-
-
-generate_world()
