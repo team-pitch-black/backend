@@ -11,6 +11,19 @@ import json
 # instantiate pusher
 # pusher = Pusher(app_id=config('PUSHER_APP_ID'), key=config('PUSHER_KEY'), secret=config('PUSHER_SECRET'), cluster=config('PUSHER_CLUSTER'))
 
+
+"""
+GET /api/adv/init/
+REQUEST: No Body
+RETURNS:
+{
+    "name": "bryanszendel1", 
+    "room_type": "ROOM2", 
+    "description": "DEFAULT DESCRIPTION", 
+    "players": ["bryanszendel1"], 
+    "error_msg": ""
+}
+"""
 @csrf_exempt
 @api_view(["GET"])
 def initialize(request):
@@ -20,9 +33,24 @@ def initialize(request):
     uuid = player.uuid
     room = player.room()
     players = room.playerNames(player_id)
-    return JsonResponse({'uuid': uuid, 'name':player.user.username, 'title':room.title, 'description':room.description, 'players':players}, safe=True)
+    return JsonResponse({'uuid': uuid, 'name':player.user.username, 'room_type':room.room_type, 'description':room.description, 'players':players}, safe=True)
 
 
+"""
+POST /api/adv/move/
+REQUEST:
+{
+    "direction":"u" || "d" || "l" || "r"
+}
+RETURNS:
+{
+    "name": "bryanszendel1", 
+    "room_type": "ROOM1", 
+    "description": "DEFAULT DESCRIPTION", 
+    "players": ["bryanszendel1", "bryanszendel"], 
+    "error_msg": ""
+}
+"""
 # @csrf_exempt
 @api_view(["POST"])
 def move(request):
@@ -45,7 +73,7 @@ def move(request):
         nextRoomID = room.room_left
     if nextRoomID is not None and nextRoomID > 0:
         nextRoom = Room.objects.get(id=nextRoomID)
-        player.current_room=nextRoomID
+        player.location=nextRoomID
         player.save()
         players = nextRoom.playerNames(player_id)
         currentPlayerUUIDs = room.playerUUIDs(player_id)
@@ -54,10 +82,10 @@ def move(request):
         #     pusher.trigger(f'p-channel-{p_uuid}', u'broadcast', {'message':f'{player.user.username} has walked {dirs[direction]}.'})
         # for p_uuid in nextPlayerUUIDs:
         #     pusher.trigger(f'p-channel-{p_uuid}', u'broadcast', {'message':f'{player.user.username} has entered from the {reverse_dirs[direction]}.'})
-        return JsonResponse({'name':player.user.username, 'title':nextRoom.title, 'description':nextRoom.description, 'players':players, 'error_msg':""}, safe=True)
+        return JsonResponse({'name':player.user.username, 'room_type':nextRoom.room_type, 'description':nextRoom.description, 'players':players, 'error_msg':""}, safe=True)
     else:
         players = room.playerNames(player_id)
-        return JsonResponse({'name':player.user.username, 'title':room.room_type, 'description':room.description, 'players':players, 'error_msg':"You cannot move that way."}, safe=True)
+        return JsonResponse({'name':player.user.username, 'room_type':room.room_type, 'description':room.description, 'players':players, 'error_msg':"You cannot move that way."}, safe=True)
 
 
 @csrf_exempt
