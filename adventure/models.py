@@ -151,8 +151,8 @@ def save_user_player(sender, instance, **kwargs):
 class Item(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     name = models.CharField(max_length=50, default="ITEM")
-    player_id = models.CharField(max_length=50, default=None)
-
+    player_id = models.IntegerField(default=0)
+    room_id = models.IntegerField(default=0)
 
 class World:
     def __init__(self):
