@@ -16,6 +16,7 @@ import json
 
 @api_view(["POST"])
 def create_world(request):
+    Room.objects.all().delete()
     w = World()
     w.generate_rooms(25, 25, 100)
     response = []
