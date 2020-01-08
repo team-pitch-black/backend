@@ -13,5 +13,5 @@ urlpatterns = [
     path('api/', include('api.urls')),
     path('api/adv/', include('adventure.urls')),
     path('api/users/', include('users.urls')),
-    re_path(r'^api-token-auth/', views.obtain_auth_token)
+    # re_path(r'^login/', views.obtain_auth_token)
 ]
