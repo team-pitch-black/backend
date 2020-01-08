@@ -4,10 +4,10 @@ from users.models import CustomUser
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
+# from rest_framework import serializers
 from uuid import uuid4
 import random
 import math
-
 
 class Room(models.Model):
     id = models.IntegerField(primary_key=True, default=0)
@@ -232,7 +232,7 @@ class World:
 
         while self.room_count < num_rooms:
 
-            offset = random.choice([-2, 2])
+            offset = random.choice([-2, -1, 1, 2])
             if random.random() > 0.5:
                 new_x, new_y = limit(x+offset, x, size_x), y
                 draw_horizontal(x, new_x, y)
@@ -265,11 +265,11 @@ class World:
 
 def generate_world():
     w = World()
-    num_rooms = 300
+    num_rooms = 100
     width = 25
     height = 25
     w.generate_rooms(width, height, num_rooms)
     w.print_rooms()
 
 
-# generate_world()
+generate_world()

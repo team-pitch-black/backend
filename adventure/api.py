@@ -5,11 +5,34 @@ from django.http import JsonResponse
 from decouple import config
 from django.contrib.auth.models import User
 from .models import *
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework import permissions, serializers
+# from rest_framework import serializers, viewsets
 import json
 
 # instantiate pusher
 # pusher = Pusher(app_id=config('PUSHER_APP_ID'), key=config('PUSHER_KEY'), secret=config('PUSHER_SECRET'), cluster=config('PUSHER_CLUSTER'))
+
+def get_serialized():
+    queryset = Room.objects.all()
+    serializer = RoomSerializer(queryset, many=True)
+    data = serializer.data
+    return data
+
+class RoomSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Room
+        name = "rooms"
+        ordering = ['id',]
+        fields = ['id', 'room_type', 'room_up', 'room_down', 'room_left', 'room_right', 'players', 'items', 'grid_x', 'grid_y']
+
+
+@api_view(["GET"])
+@permission_classes((permissions.AllowAny,))
+def get_map(request):
+    rooms = get_serialized()
+    print(rooms)
+    return JsonResponse({ 'rooms': rooms })
 
 @csrf_exempt
 @api_view(["GET"])
