@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-# from users.models import CustomUser
+from users.models import CustomUser
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
@@ -86,7 +86,7 @@ class Room(models.Model):
 
 
 class Player(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     uuid = models.UUIDField(default=uuid4, unique=True, editable=False)
     current_room = models.IntegerField(default=0)
     items = []
@@ -266,10 +266,10 @@ class World:
 def generate_world():
     w = World()
     num_rooms = 300
-    width = 30
-    height = 30
+    width = 25
+    height = 25
     w.generate_rooms(width, height, num_rooms)
     w.print_rooms()
 
 
-generate_world()
+# generate_world()

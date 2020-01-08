@@ -26,8 +26,8 @@ def initialize(request):
 # @csrf_exempt
 @api_view(["POST"])
 def move(request):
-    dirs={"n": "north", "s": "south", "e": "east", "w": "west"}
-    reverse_dirs = {"n": "south", "s": "north", "e": "west", "w": "east"}
+    dirs={"u": "up", "d": "down", "r": "right", "l": "left"}
+    reverse_dirs = {"u": "down", "d": "up", "r": "left", "l": "right"}
     player = request.user.player
     player_id = player.id
     player_uuid = player.uuid
@@ -35,17 +35,17 @@ def move(request):
     direction = data['direction']
     room = player.room()
     nextRoomID = None
-    if direction == "n":
-        nextRoomID = room.n_to
-    elif direction == "s":
-        nextRoomID = room.s_to
-    elif direction == "e":
-        nextRoomID = room.e_to
-    elif direction == "w":
-        nextRoomID = room.w_to
+    if direction == "u":
+        nextRoomID = room.room_up
+    elif direction == "d":
+        nextRoomID = room.room_down
+    elif direction == "r":
+        nextRoomID = room.room_right
+    elif direction == "l":
+        nextRoomID = room.room_left
     if nextRoomID is not None and nextRoomID > 0:
         nextRoom = Room.objects.get(id=nextRoomID)
-        player.currentRoom=nextRoomID
+        player.current_room=nextRoomID
         player.save()
         players = nextRoom.playerNames(player_id)
         currentPlayerUUIDs = room.playerUUIDs(player_id)
@@ -57,7 +57,7 @@ def move(request):
         return JsonResponse({'name':player.user.username, 'title':nextRoom.title, 'description':nextRoom.description, 'players':players, 'error_msg':""}, safe=True)
     else:
         players = room.playerNames(player_id)
-        return JsonResponse({'name':player.user.username, 'title':room.title, 'description':room.description, 'players':players, 'error_msg':"You cannot move that way."}, safe=True)
+        return JsonResponse({'name':player.user.username, 'title':room.room_type, 'description':room.description, 'players':players, 'error_msg':"You cannot move that way."}, safe=True)
 
 
 @csrf_exempt
