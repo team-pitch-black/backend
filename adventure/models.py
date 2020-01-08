@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.auth.models import User
-from users.models import CustomUser
+# from users.models import CustomUser
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
@@ -20,10 +20,10 @@ class Room(models.Model):
     room_down = models.IntegerField(default=0)
     room_right = models.IntegerField(default=0)
     room_left = models.IntegerField(default=0)
-    players = []
-    players_list = models.TextField(default=json.dumps({}))
-    items = []
-    items_list = models.TextField(default=json.dumps({}))
+    # players = []
+    # players_list = models.TextField(default=json.dumps({}))
+    # items = []
+    # items_list = models.TextField(default=json.dumps({}))
     grid_x = models.IntegerField(default=None)
     grid_y = models.IntegerField(default=None)
 
@@ -55,22 +55,22 @@ class Room(models.Model):
         setattr(connecting_room, f"room_{reverse_dir}", self.id)
         self.save()
 
-    def playerNames(self, currentPlayerID):
-        return [p.user.username for p in Player.objects.filter(current_room=self.id) if p.id != int(currentPlayerID)]
+    def playerNames(self):
+        return [p.user.username for p in Player.objects.filter(location=self.id)] #if p.id != int(currentPlayerID)
 
-    def playerUUIDs(self, currentPlayerID):
-        return [p.uuid for p in Player.objects.filter(current_room=self.id) if p.id != int(currentPlayerID)]
+    def playerUUIDs(self):
+        return [p.uuid for p in Player.objects.filter(location=self.id)] #if p.id != int(currentPlayerID)
     #####################################################
 
-    def player_entered(self, player):
-        self.players.append(player)
-        self.players_list = json.dumps([player.user.username for player in players])
-        self.save()
+    # def player_entered(self, player):
+    #     self.players.append(player)
+    #     self.players_list = json.dumps([player.user.username for player in players])
+    #     self.save()
 
-    def player_departed(self, player):
-        self.players.remove(player)
-        self.players_list = json.dumps([player.user.username for player in players])
-        self.save()
+    # def player_departed(self, player):
+    #     self.players.remove(player)
+    #     self.players_list = json.dumps([player.user.username for player in players])
+    #     self.save()
 
     def add_item(self, item):
         self.items.append(item)
@@ -92,20 +92,20 @@ class Room(models.Model):
 
 
 class Player(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     uuid = models.UUIDField(default=uuid4, unique=True, editable=False)
-    current_room = models.IntegerField(default=0)
+    location = models.IntegerField(default=1)
     items = []
 
     ############# These were provided ###############
     def initialize(self):
-        if self.self.current_room == 0:
-            self.self.current_room = Room.objects.first().id
+        if self.location == 1:
+            self.location = Room.objects.first().id
             self.save()
 
     def room(self):
         try:
-            return Room.objects.get(id=self.self.current_room)
+            return Room.objects.get(id=self.location)
         except Room.DoesNotExist:
             self.initialize()
             return self.room()
@@ -114,6 +114,13 @@ class Player(models.Model):
 
     # def __str__(self):
     #     return self.username
+
+    # Get the room object from the location integer
+    def get_room(self, id):
+        return Room.objects.get(id=self.location)
+
+    def get_items(self):
+        return Item.objects.filter(player_id=self.id)
 
     def move_up(self):
         self.location.player_departed(self)
@@ -157,7 +164,7 @@ def save_user_player(sender, instance, **kwargs):
 class Item(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     name = models.CharField(max_length=50, default="ITEM")
-
+    player_id = models.CharField(max_length=50, default=None)
 
 class World:
     def __init__(self):
