@@ -187,6 +187,8 @@ class World:
                 else:
                     self.current_room = self.current_room.get_by_id(
                         self.grid[y][x])
+                if self.room_count == num_rooms:
+                    break
 
         def draw_vertical(y1, y2, x):
             for y in range(min(y1, y2), max(y1, y2) + 1):
@@ -201,6 +203,8 @@ class World:
                 else:
                     self.current_room = self.current_room.get_by_id(
                         self.grid[y][x])
+                if self.room_count == num_rooms:
+                    break
 
         def random_direction(room):
             directions = ["up", "down", "left", "right"]
