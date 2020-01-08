@@ -32,7 +32,10 @@ def initialize(request):
     player_id = player.id
     uuid = player.uuid
     room = player.room()
+    item = player.item()
     players = room.playerNames(player_id)
+    room_items = room.roomItemNames(room.id)
+    player_items = player.playerItemNames(player_id)
     return JsonResponse({
         'uuid': uuid, 
         'name':player.user.username, 
@@ -41,6 +44,8 @@ def initialize(request):
         'description':room.description, 
         'grid_x':room.grid_x, 
         'grid_y':room.grid_y, 
+        'room_items':room_items,
+        'player_items':player_items,
         'players':players
         }, safe=True)
 
@@ -85,6 +90,9 @@ def move(request):
         player.location=nextRoomID
         player.save()
         players = nextRoom.playerNames(player_id)
+        room_items = room.roomItemNames(room.id)
+        next_room_items = nextRoom.roomItemNames(room.id)
+        player_items = player.playerItemNames(player_id)
         currentPlayerUUIDs = room.playerUUIDs(player_id)
         nextPlayerUUIDs = nextRoom.playerUUIDs(player_id)
         # for p_uuid in currentPlayerUUIDs:
@@ -98,6 +106,8 @@ def move(request):
             'description':nextRoom.description, 
             'grid_x':nextRoom.grid_x,
             'grid_y':nextRoom.grid_y,
+            'room_items':next_room_items,
+            'player_items':player_items,
             'players':players, 'error_msg':""}, safe=True)
     else:
         players = room.playerNames(player_id)
@@ -108,10 +118,99 @@ def move(request):
             'description':room.description, 
             'grid_x':room.grid_x,
             'grid_y':room.grid_y,
+            'room_items':room_items,
+            'player_items':player_items,
             'players':players, 
             'error_msg':"You cannot move that way."
             }, safe=True)
 
+@api_view(["POST"])
+def getItem(request):
+    player = request.user.player
+    player_id = player.id
+    player_uuid = player.uuid
+    data = json.loads(request.body)
+    # action = data['action']
+    itemName = data['item']
+    print('itemName', itemName)
+    player_item = player.getItem(itemName)
+    print('item', player_item)
+    room = player.room()
+    players = room.playerNames(player_id)
+    room_items = room.roomItemNames(room.id)
+    print(room.id)
+
+    if (itemName in room_items):
+        # player_item = item.getItem(itemName)
+        player_item.player_id = player_id
+        player_item.room_id = 0
+        player_item.save()
+
+        room_items = room.roomItemNames(room.id) 
+        player_items = player.playerItemNames(player_id)
+    
+        return JsonResponse({
+            'uuid': player_uuid, 
+            'name':player.user.username, 
+            'room_id': room.id, 
+            'room_type':room.room_type, 
+            'description':room.description, 
+            'grid_x':room.grid_x, 
+            'grid_y':room.grid_y, 
+            'room_items':room_items,
+            'player_items':player_items,
+            'players':players
+            }, safe=True)
+    
+    else:
+        return JsonResponse({
+            'message':'That item is not in this room'
+        }, status=404)
+
+@api_view(["POST"])
+def dropItem(request):
+    player = request.user.player
+    player_id = player.id
+    player_uuid = player.uuid
+    data = json.loads(request.body)
+    # action = data['action']
+    itemName = data['item']
+    print('itemName', itemName)
+    player_item = player.getItem(itemName)
+    print('item', player_item)
+    room = player.room()
+    room_id = room.id
+    players = room.playerNames(player_id)
+    room_items = room.roomItemNames(room.id)
+    player_items = player.playerItemNames(player_id)
+    print(room.id)
+
+    if (itemName in player_items):
+        # player_item = item.getItem(itemName)
+        player_item.player_id = 0
+        player_item.room_id = room_id
+        player_item.save()
+
+        room_items = room.roomItemNames(room.id) 
+        player_items = player.playerItemNames(player_id)
+    
+        return JsonResponse({
+            'uuid': player_uuid, 
+            'name':player.user.username, 
+            'room_id': room.id, 
+            'room_type':room.room_type, 
+            'description':room.description, 
+            'grid_x':room.grid_x, 
+            'grid_y':room.grid_y, 
+            'room_items':room_items,
+            'player_items':player_items,
+            'players':players
+            }, safe=True)
+    
+    else:
+        return JsonResponse({
+            'message':'That item is not in your knapsack.'
+        }, status=404)
 
 @csrf_exempt
 @api_view(["POST"])

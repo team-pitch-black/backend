@@ -54,6 +54,9 @@ class Room(models.Model):
         return [p.uuid for p in Player.objects.filter(location=self.id)] #if p.id != int(currentPlayerID)
     #####################################################
 
+    def roomItemNames(self, currentRoomID):
+        return [i.name for i in Item.objects.filter(room_id=currentRoomID)] #if p.id != int(currentPlayerID)
+
     def player_entered(self, player):
         self.players.append(player)
 
@@ -98,11 +101,22 @@ class Player(models.Model):
             self.initialize()
             return self.room()
 
+    def item(self):
+        try:
+            return Item.objects.filter(player_id=self.user.id)
+        except Item.DoesNotExist:
+            self.initialize()
+            return self.item()
 
+    def getItem(self, item):
+        return Item.objects.get(name=item)
     ###############################################
 
     # def __str__(self):
     #     return self.username
+    
+    def playerItemNames(self, currentPlayerID):
+        return [i.name for i in Item.objects.filter(player_id=currentPlayerID)] #if p.id != int(currentPlayerID)
 
     # Get the room object from the location integer
     def get_room(self, id):
@@ -153,6 +167,9 @@ class Item(models.Model):
     name = models.CharField(max_length=50, default="ITEM")
     player_id = models.IntegerField(default=0)
     room_id = models.IntegerField(default=0)
+
+    # def getItem(self, itemName):
+    #     return Item.objects.get(name=itemName)
 
 class World:
     def __init__(self):
