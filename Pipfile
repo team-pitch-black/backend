@@ -14,8 +14,11 @@ django-cors-headers = "*"
 gunicorn = "*"
 django-heroku = "*"
 django-rest-api = "*"
-
-[dev-packages]
+python-dotenv = "*"
+dj_database_url = "*"
 
 [requires]
-python_version = "3.8"
+python_version = "*"
+
+[dev-packages]
+autopep8 = "*"

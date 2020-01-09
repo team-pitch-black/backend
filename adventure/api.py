@@ -5,11 +5,55 @@ from django.http import JsonResponse
 from decouple import config
 from django.contrib.auth.models import User
 from .models import *
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+# from rest_framework import permissions, serializers
+from rest_framework import permissions
+# from rest_framework import serializers, viewsets
 import json
 
 # instantiate pusher
 # pusher = Pusher(app_id=config('PUSHER_APP_ID'), key=config('PUSHER_KEY'), secret=config('PUSHER_SECRET'), cluster=config('PUSHER_CLUSTER'))
+
+@api_view(["POST"])
+@permission_classes((permissions.IsAdminUser,))
+def create_world(request):
+    Room.objects.all().delete()
+    w = World()
+    w.generate_rooms(25, 25, 100)
+    response = []
+    rooms = list(Room.objects.all())
+    for room in rooms:
+        response.append({
+            'id': room.id,
+            'room_type': room.room_type,
+            'grid_x': room.grid_x,
+            'grid_y': room.grid_y,
+            'players': room.playerNames(),
+            'items': []
+        })
+
+    return JsonResponse(response, safe=False)
+
+
+@api_view(["GET"])
+@permission_classes((permissions.AllowAny,))
+def get_map(request, room_id=None):
+    if room_id:
+        rooms = list(Room.objects.filter(id=room_id))
+    else:
+        rooms = list(Room.objects.all())
+    response = []
+    for room in rooms:
+        response.append({
+            'id': room.id,
+            'room_type': room.room_type,
+            'grid_x': room.grid_x,
+            'grid_y': room.grid_y,
+            'players': room.playerNames(),
+            'items': []
+        })
+
+    return JsonResponse(response, safe=False)
 
 
 """
