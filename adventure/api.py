@@ -97,10 +97,10 @@ def create_world(request):
     exit_room.save()
 
     # Generate a list of all rooms and contents
-    response = []
+    room_list = []
     rooms = list(Room.objects.all())
     for room in rooms:
-        response.append({
+        room_list.append({
             'id': room.id,
             'room_type': room.room_type,
             'grid_x': room.grid_x,
@@ -108,8 +108,34 @@ def create_world(request):
             'players': room.playerNames(),
             'room_items': room.roomItemNames()
         })
-    # Return the rooms list
-    return JsonResponse(response, safe=False)
+
+    # Get player inifo
+    user = request.user
+    player = user.player
+    player_id = player.id
+    uuid = player.uuid
+    room = player.room()
+    item = player.item()
+    players = room.playerNames()
+    room_items = room.roomItemNames()
+    player_items = player.playerItemNames()
+
+    # Return the rooms list and player info
+    return JsonResponse({
+            'rooms': room_list,
+            'player': {
+            'uuid': uuid, 
+            'name':player.user.username, 
+            'room_id': room.id, 
+            'room_type':room.room_type, 
+            'description':room.description, 
+            'grid_x':room.grid_x, 
+            'grid_y':room.grid_y, 
+            'room_items':room_items,
+            'player_items':player_items,
+            'players':players
+        }
+    }, safe=False)
 
 """
 GET /api/adv/map/:id/ # Returns all rooms or a single room if ID is included
@@ -131,15 +157,17 @@ RETURNS:
 ]
 """
 @api_view(["GET"])
-@permission_classes((permissions.AllowAny,))
+@permission_classes((permissions.IsAuthenticated,))
 def get_map(request, room_id=None):
     if room_id:
         rooms = list(Room.objects.filter(id=room_id))
     else:
         rooms = list(Room.objects.all())
-    response = []
+
+    # Generate a list of all rooms and contents
+    room_list = []
     for room in rooms:
-        response.append({
+        room_list.append({
             'id': room.id,
             'room_type': room.room_type,
             'grid_x': room.grid_x,
@@ -148,7 +176,33 @@ def get_map(request, room_id=None):
             'room_items': room.roomItemNames()
         })
 
-    return JsonResponse(response, safe=False)
+    # Get player inifo
+    user = request.user
+    player = user.player
+    player_id = player.id
+    uuid = player.uuid
+    room = player.room()
+    item = player.item()
+    players = room.playerNames()
+    room_items = room.roomItemNames()
+    player_items = player.playerItemNames()
+
+    # Return the rooms list and player info
+    return JsonResponse({
+            'rooms': room_list,
+            'player': {
+            'uuid': uuid, 
+            'name':player.user.username, 
+            'room_id': room.id, 
+            'room_type':room.room_type, 
+            'description':room.description, 
+            'grid_x':room.grid_x, 
+            'grid_y':room.grid_y, 
+            'room_items':room_items,
+            'player_items':player_items,
+            'players':players
+        }
+    }, safe=False)
 
 
 """
@@ -240,6 +294,8 @@ def move(request):
         #     pusher.trigger(f'p-channel-{p_uuid}', u'broadcast', {'message':f'{player.user.username} has walked {dirs[direction]}.'})
         # for p_uuid in nextPlayerUUIDs:
         #     pusher.trigger(f'p-channel-{p_uuid}', u'broadcast', {'message':f'{player.user.username} has entered from the {reverse_dirs[direction]}.'})
+        
+        # Player can only enter the locked room if they have the key
         error_message = ""
         if nextRoom.room_type == '5':
             if "exit key" not in player.playerItemNames():
