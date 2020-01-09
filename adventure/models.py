@@ -61,9 +61,10 @@ class Room(models.Model):
     def playerUUIDs(self):
         return [p.uuid for p in Player.objects.filter(location=self.id)] #if p.id != int(currentPlayerID)
     #####################################################
+    
 
-    def roomItemNames(self, currentRoomID):
-        return [i.name for i in Item.objects.filter(room_id=currentRoomID)] #if p.id != int(currentPlayerID)
+    def roomItemNames(self):
+        return [i.name for i in Item.objects.filter(room_id=self.id)] #if p.id != int(currentPlayerID)
 
     def player_entered(self, player):
         self.players.append(player)
@@ -129,15 +130,15 @@ class Player(models.Model):
     # def __str__(self):
     #     return self.username
     
-    def playerItemNames(self, currentPlayerID):
-        return [i.name for i in Item.objects.filter(player_id=currentPlayerID)] #if p.id != int(currentPlayerID)
+    def playerItemNames(self):
+        return [i.name for i in Item.objects.filter(player_id=self.user.id)] #if p.id != int(currentPlayerID)
 
     # Get the room object from the location integer
     def get_room(self, id):
         return Room.objects.get(id=self.location)
 
     def get_items(self):
-        return Item.objects.filter(player_id=self.id)
+        return Item.objects.filter(player_id=self.user.id)
 
     def move_up(self):
         self.location.player_departed(self)

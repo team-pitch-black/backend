@@ -10,6 +10,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework import permissions
 # from rest_framework import serializers, viewsets
 import json
+import random
 
 # instantiate pusher
 # pusher = Pusher(app_id=config('PUSHER_APP_ID'), key=config('PUSHER_KEY'), secret=config('PUSHER_SECRET'), cluster=config('PUSHER_CLUSTER'))
@@ -18,8 +19,20 @@ import json
 @permission_classes((permissions.IsAdminUser,))
 def create_world(request):
     Room.objects.all().delete()
+    Item.objects.all().delete()
+
     w = World()
     w.generate_rooms(25, 25, 100)
+
+    type_items = ["hammer", "bat", "sword", "axe"]
+    item_adj = ["plastic", "metal", "golden"]
+    items = [None] * 12
+
+    for i in range(12):
+        s = f"{random.choice(item_adj)} {random.choice(type_items)}"
+        item = Item(name=s, room_id=random.randint(1, 100))
+        item.save()
+
     response = []
     rooms = list(Room.objects.all())
     for room in rooms:
@@ -29,7 +42,7 @@ def create_world(request):
             'grid_x': room.grid_x,
             'grid_y': room.grid_y,
             'players': room.playerNames(),
-            'items': []
+            'items': room.roomItemNames()
         })
 
     return JsonResponse(response, safe=False)
@@ -50,7 +63,7 @@ def get_map(request, room_id=None):
             'grid_x': room.grid_x,
             'grid_y': room.grid_y,
             'players': room.playerNames(),
-            'items': []
+            'items': room.roomItemNames()
         })
 
     return JsonResponse(response, safe=False)
