@@ -26,11 +26,8 @@ class Room(models.Model):
     # items_list = models.TextField(default=json.dumps({}))
     grid_x = models.IntegerField(default=None)
     grid_y = models.IntegerField(default=None)
-
     # def __repr__(self):
     #     pass
-
-
 
     ################ These were provided ################
     def get_room_in_direction(self, direction):
@@ -42,18 +39,20 @@ class Room(models.Model):
     def get_by_id(self, id):
         # print("id", id)
         # print(Room.objects.filter(id=id)[0])
-        return Room.objects.filter(id=id)[0]
+        return Room.objects.filter(id=id).first()
 
     def connect_rooms(self, connecting_room, direction):
         '''
         Connect two rooms in the given n/s/e/w direction
         '''
-        reverse_dirs = {"up": "down", "down": "up",
-                        "right": "left", "left": "right"}
-        reverse_dir = reverse_dirs[direction]
+        reverse_dir = {"up": "down", "down": "up",
+                        "right": "left", "left": "right"}[direction]
         setattr(self, f"room_{direction}", connecting_room.id)
-        setattr(connecting_room, f"room_{reverse_dir}", self.id)
         self.save()
+        setattr(connecting_room, f"room_{reverse_dir}", self.id)
+        connecting_room.save()
+
+        # print(self.id, direction, getattr(self, f"room_{direction}"), connecting_room.id, reverse_dir, getattr(connecting_room, f"room_{reverse_dir}"))
 
     def playerNames(self):
         return [p.user.username for p in Player.objects.filter(location=self.id)] #if p.id != int(currentPlayerID)
@@ -61,9 +60,10 @@ class Room(models.Model):
     def playerUUIDs(self):
         return [p.uuid for p in Player.objects.filter(location=self.id)] #if p.id != int(currentPlayerID)
     #####################################################
+    
 
-    def roomItemNames(self, currentRoomID):
-        return [i.name for i in Item.objects.filter(room_id=currentRoomID)] #if p.id != int(currentPlayerID)
+    def roomItemNames(self):
+        return [i.name for i in Item.objects.filter(room_id=self.id)] #if p.id != int(currentPlayerID)
 
     def player_entered(self, player):
         self.players.append(player)
@@ -79,21 +79,27 @@ class Room(models.Model):
 
     def add_item(self, item):
         self.items.append(item)
+        self.save()
 
     def remove_item(self, item):
         self.items.remove(item)
+        self.save()
 
     def set_room_up(self, room):
         self.room_up = room
+        self.save()
 
     def set_room_down(self, room):
         self.room_down = room
+        self.save()
 
     def set_room_left(self, room):
         self.room_left = room
+        self.save()
 
     def set_room_right(self, room):
         self.room_right = room
+        self.save()
 
 
 class Player(models.Model):
@@ -129,15 +135,15 @@ class Player(models.Model):
     # def __str__(self):
     #     return self.username
     
-    def playerItemNames(self, currentPlayerID):
-        return [i.name for i in Item.objects.filter(player_id=currentPlayerID)] #if p.id != int(currentPlayerID)
+    def playerItemNames(self):
+        return [i.name for i in Item.objects.filter(player_id=self.user.id)] #if p.id != int(currentPlayerID)
 
     # Get the room object from the location integer
     def get_room(self, id):
         return Room.objects.get(id=self.location)
 
     def get_items(self):
-        return Item.objects.filter(player_id=self.id)
+        return Item.objects.filter(player_id=self.user.id)
 
     def move_up(self):
         self.location.player_departed(self)
@@ -191,6 +197,7 @@ class World:
         self.height = 0
         self.rooms = []
         self.room_count = 1
+        self.prev_direction = "up"
 
     def generate_rooms(self, size_x, size_y, num_rooms):
         '''
@@ -204,42 +211,27 @@ class World:
                 return new
 
         def draw_horizontal(x1, x2, y):
+            if x1 == x2:
+                return
             for x in range(min(x1, x2), max(x1, x2) + 1):
+                # print(x, y)
                 if self.grid[y][x] == 0:
                     self.room_count += 1
                     self.grid[y][x] = self.room_count
-                    new_room = Room(id=self.room_count,
-                                    room_type=1, grid_x=x, grid_y=y)
-                    new_room.save()
-                    self.current_room.connect_rooms(new_room, "right")
-                    self.current_room = new_room
-                    # print(f"{self.current_room.id} connecting to {new_room.id}, room_right = {self.current_room.room_right}")
-                    # print(f"{new_room.id} connecting to {self.current_room.id}, room_left = {new_room.room_left}")
-                else:
-                    self.current_room = self.current_room.get_by_id(
-                        self.grid[y][x])
-                if self.room_count == num_rooms:
-                    break
 
         def draw_vertical(y1, y2, x):
+            if y1 == y2:
+                return
             for y in range(min(y1, y2), max(y1, y2) + 1):
                 if self.grid[y][x] == 0:
                     self.room_count += 1
                     self.grid[y][x] = self.room_count
-                    new_room = Room(id=self.room_count,
-                                    room_type=1, grid_x=x, grid_y=y)
-                    new_room.save()
-                    self.current_room.connect_rooms(new_room, "up")
-                    self.current_room = new_room
-                else:
-                    self.current_room = self.current_room.get_by_id(
-                        self.grid[y][x])
-                if self.room_count == num_rooms:
-                    break
 
         def random_direction(room):
             directions = ["up", "down", "left", "right"]
-            open_paths = [x for x in directions if room[f"room_{x}"] == 0]
+            open_paths = [(x, room.get_room_in_direction(x)) for x in directions if room.get_room_in_direction(x) == 0]
+            print(open_paths)
+            input()
             if (len(open_paths)):
                 return random.choice(open_paths)
             else:
@@ -263,16 +255,61 @@ class World:
 
         while self.room_count < num_rooms:
 
-            offset = random.choice([-2, -1, 1, 2])
+            # offset_x, offset_y = random.choice([(0, 1), (0, -1), (-1, 0), (1, 0)])
+            # new_x, new_y = limit(x+offset_x, x, size_x), limit(y+offset_y, y, size_y)
+            # print(x, y, new_x, new_y, self.grid[new_y][new_x])
+            # if (new_x != x or new_y != y) and self.grid[new_y][new_x] == 0:
+            #     self.room_count += 1
+            #     self.grid[new_y][new_x] = self.room_count
+            # x, y = new_x, new_y
+
+            # self.print_rooms()
+            # input()
+
+            offset = random.choice([-3, 1, 3])
             if random.random() > 0.5:
-                new_x, new_y = limit(x+offset, x, size_x), y
+                new_x = limit(x+offset, x, size_x)
                 draw_horizontal(x, new_x, y)
+                x = new_x
             else:
-                new_x, new_y = x, limit(y+offset, y, size_y)
+                new_y = limit(y+offset, y, size_y)
                 draw_vertical(y, new_y, x)
+                y = new_y
 
-            x, y = new_x, new_y
+            # self.print_rooms()
+        
+        print("Linking rooms... ", end="")
 
+        cache = {}
+        def create_or_retrieve_room(id, x, y):
+            if id in cache:
+                room = cache[id]
+            else:
+                room = Room(id=id, room_type=1, grid_x=x, grid_y=y)
+                room.save()
+                cache[id] = room
+            return room
+
+        for y in range(0, size_y):
+            for x in range(0, size_x):
+                current_id = self.grid[y][x]
+                right_id = self.grid[y][x+1] if x + 1 < size_x else 0
+                down_id = self.grid[y+1][x] if y + 1 < size_y else 0
+
+                if current_id:
+                    current_room = create_or_retrieve_room(current_id, x, y)
+                    if right_id:
+                        print("right ", end="")
+                        new_room = create_or_retrieve_room(right_id, x+1, y)
+                        print(current_room, new_room)
+                        current_room.connect_rooms(new_room, "right")
+                    if down_id:
+                        print("down ", end="")
+                        new_room = create_or_retrieve_room(down_id, x, y+1)
+                        print(current_room, new_room)
+                        current_room.connect_rooms(new_room, "up")
+
+        print("done")
         print(f"${self.room_count} rooms generated")
 
     def print_rooms(self):
@@ -281,7 +318,7 @@ class World:
         '''
 
         reverse_grid = list(self.grid)  # make a copy of the list
-        reverse_grid.reverse()
+        # reverse_grid.reverse()
 
         for row in reverse_grid:
             for room in row:
