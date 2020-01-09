@@ -21,6 +21,10 @@ def create_world(request):
     Room.objects.all().delete()
     Item.objects.all().delete()
 
+    for player in Player.objects.all():
+        player.location = 1
+        player.save()
+
     w = World()
     w.generate_rooms(25, 25, 100)
     w.print_rooms()
@@ -37,6 +41,37 @@ def create_world(request):
         item = Item(name=s, room_id=random.randint(1, 100))
         item.save()
         items.append(s)
+    
+    # Place exit key
+    item = Item(name="exit key", room_id=100)
+    item.save()
+    # Place key room
+    key_room = Room.objects.filter(id=100)[0]
+    key_room.room_type = 4
+    key_room.description = "Key Room"
+    key_room.save()
+    # Place monster room
+    monster_room = Room.objects.filter(id=70)[0]
+    monster_room.room_type = 3
+    monster_room.description = "Monster Room"
+    monster_room.save()
+    # Place treasure room
+    treasure_room = Room.objects.filter(id=80)[0]
+    treasure_room.room_type = 2
+    treasure_room.description = "Treasure Room"
+    treasure_room.save()
+    # Place treasure
+    treasures = ["Sword of Employment", "Armor of Code Challenge Prowess", "1138 LambdaCoin"]
+    for treasure in treasures:
+        treasure_item = Item(name=treasure, room_id=80)
+        treasure_item.save()
+    # Place exit room
+    exit_room = Room.objects.filter(id=50)[0]
+    exit_room.room_type = 5
+    exit_room.description = "Locked Room"
+    exit_room.save()
+
+
 
     response = []
     rooms = list(Room.objects.all())
