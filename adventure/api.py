@@ -90,9 +90,9 @@ def initialize(request):
     uuid = player.uuid
     room = player.room()
     item = player.item()
-    players = room.playerNames(player_id)
-    room_items = room.roomItemNames(room.id)
-    player_items = player.playerItemNames(player_id)
+    players = room.playerNames()
+    room_items = room.roomItemNames()
+    player_items = player.playerItemNames()
     return JsonResponse({
         'uuid': uuid, 
         'name':player.user.username, 
@@ -146,12 +146,12 @@ def move(request):
         nextRoom = Room.objects.get(id=nextRoomID)
         player.location=nextRoomID
         player.save()
-        players = nextRoom.playerNames(player_id)
-        room_items = room.roomItemNames(room.id)
-        next_room_items = nextRoom.roomItemNames(room.id)
-        player_items = player.playerItemNames(player_id)
-        currentPlayerUUIDs = room.playerUUIDs(player_id)
-        nextPlayerUUIDs = nextRoom.playerUUIDs(player_id)
+        players = nextRoom.playerNames()
+        room_items = room.roomItemNames()
+        next_room_items = nextRoom.roomItemNames()
+        player_items = player.playerItemNames()
+        currentPlayerUUIDs = room.playerUUIDs()
+        nextPlayerUUIDs = nextRoom.playerUUIDs()
         # for p_uuid in currentPlayerUUIDs:
         #     pusher.trigger(f'p-channel-{p_uuid}', u'broadcast', {'message':f'{player.user.username} has walked {dirs[direction]}.'})
         # for p_uuid in nextPlayerUUIDs:
@@ -167,7 +167,7 @@ def move(request):
             'player_items':player_items,
             'players':players, 'error_msg':""}, safe=True)
     else:
-        players = room.playerNames(player_id)
+        players = room.playerNames()
         return JsonResponse({
             'name':player.user.username, 
             'room_id': room.id, 
@@ -193,8 +193,8 @@ def getItem(request):
     player_item = player.getItem(itemName)
     print('item', player_item)
     room = player.room()
-    players = room.playerNames(player_id)
-    room_items = room.roomItemNames(room.id)
+    players = room.playerNames()
+    room_items = room.roomItemNames()
     print(room.id)
 
     if (itemName in room_items):
@@ -203,8 +203,8 @@ def getItem(request):
         player_item.room_id = 0
         player_item.save()
 
-        room_items = room.roomItemNames(room.id) 
-        player_items = player.playerItemNames(player_id)
+        room_items = room.roomItemNames() 
+        player_items = player.playerItemNames()
     
         return JsonResponse({
             'uuid': player_uuid, 
@@ -237,9 +237,9 @@ def dropItem(request):
     print('item', player_item)
     room = player.room()
     room_id = room.id
-    players = room.playerNames(player_id)
-    room_items = room.roomItemNames(room.id)
-    player_items = player.playerItemNames(player_id)
+    players = room.playerNames()
+    room_items = room.roomItemNames()
+    player_items = player.playerItemNames()
     print(room.id)
 
     if (itemName in player_items):
@@ -248,8 +248,8 @@ def dropItem(request):
         player_item.room_id = room_id
         player_item.save()
 
-        room_items = room.roomItemNames(room.id) 
-        player_items = player.playerItemNames(player_id)
+        room_items = room.roomItemNames() 
+        player_items = player.playerItemNames()
     
         return JsonResponse({
             'uuid': player_uuid, 
