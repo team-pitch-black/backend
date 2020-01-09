@@ -10,6 +10,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework import permissions
 # from rest_framework import serializers, viewsets
 import json
+import random
 
 # instantiate pusher
 # pusher = Pusher(app_id=config('PUSHER_APP_ID'), key=config('PUSHER_KEY'), secret=config('PUSHER_SECRET'), cluster=config('PUSHER_CLUSTER'))
@@ -18,8 +19,25 @@ import json
 @permission_classes((permissions.IsAdminUser,))
 def create_world(request):
     Room.objects.all().delete()
+    Item.objects.all().delete()
+
     w = World()
     w.generate_rooms(25, 25, 100)
+    w.print_rooms()
+
+    type_items = ["hammer", "bat", "sword", "axe", "whip", "dagger", "club", "idol", "hamster"]
+    item_adj = ["plastic", "metal", "golden", "suede", "marble", "velvet", "obsidian"]
+    items = [None] * 12
+
+    for i in range(12):
+        while True:
+            s = f"{random.choice(item_adj)} {random.choice(type_items)}"
+            if s not in items:
+                break
+        item = Item(name=s, room_id=random.randint(1, 100))
+        item.save()
+        items.append(s)
+
     response = []
     rooms = list(Room.objects.all())
     for room in rooms:
@@ -29,7 +47,7 @@ def create_world(request):
             'grid_x': room.grid_x,
             'grid_y': room.grid_y,
             'players': room.playerNames(),
-            'items': []
+            'room_items': room.roomItemNames()
         })
 
     return JsonResponse(response, safe=False)
@@ -50,7 +68,7 @@ def get_map(request, room_id=None):
             'grid_x': room.grid_x,
             'grid_y': room.grid_y,
             'players': room.playerNames(),
-            'items': []
+            'room_items': room.roomItemNames()
         })
 
     return JsonResponse(response, safe=False)
@@ -78,8 +96,8 @@ def initialize(request):
     room = player.room()
     item = player.item()
     players = room.playerNames()
-    room_items = room.roomItemNames(room.id)
-    player_items = player.playerItemNames(player_id)
+    room_items = room.roomItemNames()
+    player_items = player.playerItemNames()
     return JsonResponse({
         'uuid': uuid, 
         'name':player.user.username, 
@@ -134,9 +152,9 @@ def move(request):
         player.location=nextRoomID
         player.save()
         players = nextRoom.playerNames()
-        room_items = room.roomItemNames(room.id)
-        next_room_items = nextRoom.roomItemNames(room.id)
-        player_items = player.playerItemNames(player_id)
+        room_items = room.roomItemNames()
+        next_room_items = nextRoom.roomItemNames()
+        player_items = player.playerItemNames()
         currentPlayerUUIDs = room.playerUUIDs()
         nextPlayerUUIDs = nextRoom.playerUUIDs()
         # for p_uuid in currentPlayerUUIDs:
@@ -154,8 +172,8 @@ def move(request):
             'player_items':player_items,
             'players':players, 'error_msg':""}, safe=True)
     else:
-        room_items = room.roomItemNames(room.id)
-        player_items = player.playerItemNames(player_id)
+        room_items = room.roomItemNames()
+        player_items = player.playerItemNames()
         players = room.playerNames()
         return JsonResponse({
             'name':player.user.username, 
@@ -183,7 +201,7 @@ def getItem(request):
     print('item', player_item)
     room = player.room()
     players = room.playerNames()
-    room_items = room.roomItemNames(room.id)
+    room_items = room.roomItemNames()
     print(room.id)
 
     if (itemName in room_items):
@@ -192,8 +210,8 @@ def getItem(request):
         player_item.room_id = 0
         player_item.save()
 
-        room_items = room.roomItemNames(room.id) 
-        player_items = player.playerItemNames(player_id)
+        room_items = room.roomItemNames() 
+        player_items = player.playerItemNames()
     
         return JsonResponse({
             'uuid': player_uuid, 
@@ -227,8 +245,8 @@ def dropItem(request):
     room = player.room()
     room_id = room.id
     players = room.playerNames()
-    room_items = room.roomItemNames(room.id)
-    player_items = player.playerItemNames(player_id)
+    room_items = room.roomItemNames()
+    player_items = player.playerItemNames()
     print(room.id)
 
     if (itemName in player_items):
@@ -237,12 +255,11 @@ def dropItem(request):
         player_item.room_id = room_id
         player_item.save()
 
-        room_items = room.roomItemNames(room.id) 
-        player_items = player.playerItemNames(player_id)
-    
+        room_items = room.roomItemNames() 
+        player_items = player.playerItemNames()
+        
         return JsonResponse({
             'uuid': player_uuid, 
-            'name':player.user.username, 
             'room_id': room.id, 
             'room_type':room.room_type, 
             'description':room.description, 
