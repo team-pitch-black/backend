@@ -24,14 +24,18 @@ def create_world(request):
     w = World()
     w.generate_rooms(25, 25, 100)
 
-    type_items = ["hammer", "bat", "sword", "axe"]
-    item_adj = ["plastic", "metal", "golden"]
+    type_items = ["hammer", "bat", "sword", "axe", "whip", "dagger", "club", "idol", "hamster"]
+    item_adj = ["plastic", "metal", "golden", "suede", "marble", "velvet", "obsidian"]
     items = [None] * 12
 
     for i in range(12):
-        s = f"{random.choice(item_adj)} {random.choice(type_items)}"
+        while True:
+            s = f"{random.choice(item_adj)} {random.choice(type_items)}"
+            if s not in items:
+                break
         item = Item(name=s, room_id=random.randint(1, 100))
         item.save()
+        items.append(s)
 
     response = []
     rooms = list(Room.objects.all())
