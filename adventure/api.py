@@ -10,6 +10,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework import permissions
 # from rest_framework import serializers, viewsets
 import json
+import random
 
 # instantiate pusher
 # pusher = Pusher(app_id=config('PUSHER_APP_ID'), key=config('PUSHER_KEY'), secret=config('PUSHER_SECRET'), cluster=config('PUSHER_CLUSTER'))
@@ -96,7 +97,7 @@ def initialize(request):
     item = player.item()
     players = room.playerNames()
     room_items = room.roomItemNames()
-    player_items = player.playerItemNames(player.id)
+    player_items = player.playerItemNames()
     return JsonResponse({
         'uuid': uuid, 
         'name':player.user.username, 
@@ -153,7 +154,7 @@ def move(request):
         players = nextRoom.playerNames()
         room_items = room.roomItemNames()
         next_room_items = nextRoom.roomItemNames()
-        player_items = player.playerItemNames(player.id)
+        player_items = player.playerItemNames()
         currentPlayerUUIDs = room.playerUUIDs()
         nextPlayerUUIDs = nextRoom.playerUUIDs()
         # for p_uuid in currentPlayerUUIDs:
@@ -208,7 +209,7 @@ def getItem(request):
         player_item.save()
 
         room_items = room.roomItemNames() 
-        player_items = player.playerItemNames(player.id)
+        player_items = player.playerItemNames()
     
         return JsonResponse({
             'uuid': player_uuid, 
@@ -243,7 +244,7 @@ def dropItem(request):
     room_id = room.id
     players = room.playerNames()
     room_items = room.roomItemNames()
-    player_items = player.playerItemNames(player.id)
+    player_items = player.playerItemNames()
     print(room.id)
 
     if (itemName in player_items):
@@ -253,11 +254,10 @@ def dropItem(request):
         player_item.save()
 
         room_items = room.roomItemNames() 
-        player_items = player.playerItemNames(player.id)
-    
+        player_items = player.playerItemNames()
+        
         return JsonResponse({
             'uuid': player_uuid, 
-            'name':player.user.username, 
             'room_id': room.id, 
             'room_type':room.room_type, 
             'description':room.description, 
