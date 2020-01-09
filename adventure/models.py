@@ -26,11 +26,8 @@ class Room(models.Model):
     # items_list = models.TextField(default=json.dumps({}))
     grid_x = models.IntegerField(default=None)
     grid_y = models.IntegerField(default=None)
-
     # def __repr__(self):
     #     pass
-
-
 
     ################ These were provided ################
     def get_room_in_direction(self, direction):
@@ -42,18 +39,19 @@ class Room(models.Model):
     def get_by_id(self, id):
         # print("id", id)
         # print(Room.objects.filter(id=id)[0])
-        return Room.objects.filter(id=id)[0]
+        return Room.objects.filter(id=id).first()
 
     def connect_rooms(self, connecting_room, direction):
         '''
         Connect two rooms in the given n/s/e/w direction
         '''
-        reverse_dirs = {"up": "down", "down": "up",
-                        "right": "left", "left": "right"}
-        reverse_dir = reverse_dirs[direction]
+        reverse_dir = {"up": "down", "down": "up",
+                        "right": "left", "left": "right"}[direction]
         setattr(self, f"room_{direction}", connecting_room.id)
         setattr(connecting_room, f"room_{reverse_dir}", self.id)
         self.save()
+        connecting_room.save()
+        # print(self.id, direction, getattr(self, f"room_{direction}"), connecting_room.id, reverse_dir, getattr(connecting_room, f"room_{reverse_dir}"))
 
     def playerNames(self):
         return [p.user.username for p in Player.objects.filter(location=self.id)] #if p.id != int(currentPlayerID)
@@ -80,21 +78,27 @@ class Room(models.Model):
 
     def add_item(self, item):
         self.items.append(item)
+        self.save()
 
     def remove_item(self, item):
         self.items.remove(item)
+        self.save()
 
     def set_room_up(self, room):
         self.room_up = room
+        self.save()
 
     def set_room_down(self, room):
         self.room_down = room
+        self.save()
 
     def set_room_left(self, room):
         self.room_left = room
+        self.save()
 
     def set_room_right(self, room):
         self.room_right = room
+        self.save()
 
 
 class Player(models.Model):
@@ -205,6 +209,8 @@ class World:
                 return new
 
         def draw_horizontal(x1, x2, y):
+            if x1 == x2:
+                return
             for x in range(min(x1, x2), max(x1, x2) + 1):
                 if self.grid[y][x] == 0:
                     self.room_count += 1
@@ -212,17 +218,21 @@ class World:
                     new_room = Room(id=self.room_count,
                                     room_type=1, grid_x=x, grid_y=y)
                     new_room.save()
-                    self.current_room.connect_rooms(new_room, "right")
-                    self.current_room = new_room
-                    # print(f"{self.current_room.id} connecting to {new_room.id}, room_right = {self.current_room.room_right}")
-                    # print(f"{new_room.id} connecting to {self.current_room.id}, room_left = {new_room.room_left}")
+                    print(f"{self.current_room.id} connecting to {new_room.id}, room_right = {self.current_room.room_right}")
+                    print(f"{new_room.id} connecting to {self.current_room.id}, room_left = {new_room.room_left}")
                 else:
-                    self.current_room = self.current_room.get_by_id(
-                        self.grid[y][x])
+                    new_room = self.current_room.get_by_id(self.grid[y][x])
+
+                self.current_room.connect_rooms(new_room, "right")
+                self.current_room = new_room
+                print(self.room_count)
+
                 if self.room_count == num_rooms:
                     break
 
         def draw_vertical(y1, y2, x):
+            if y1 == y2:
+                return
             for y in range(min(y1, y2), max(y1, y2) + 1):
                 if self.grid[y][x] == 0:
                     self.room_count += 1
@@ -230,11 +240,14 @@ class World:
                     new_room = Room(id=self.room_count,
                                     room_type=1, grid_x=x, grid_y=y)
                     new_room.save()
-                    self.current_room.connect_rooms(new_room, "up")
-                    self.current_room = new_room
                 else:
-                    self.current_room = self.current_room.get_by_id(
-                        self.grid[y][x])
+                    new_room = self.current_room.get_by_id(self.grid[y][x])
+
+                self.current_room.connect_rooms(new_room, "up")
+                self.current_room = new_room
+
+                print(self.room_count)
+
                 if self.room_count == num_rooms:
                     break
 
@@ -264,7 +277,7 @@ class World:
 
         while self.room_count < num_rooms:
 
-            offset = random.choice([-2, -1, 1, 2])
+            offset = random.choice([-5, -3, -2, 2, 3, 5])
             if random.random() > 0.5:
                 new_x, new_y = limit(x+offset, x, size_x), y
                 draw_horizontal(x, new_x, y)
@@ -282,7 +295,7 @@ class World:
         '''
 
         reverse_grid = list(self.grid)  # make a copy of the list
-        reverse_grid.reverse()
+        # reverse_grid.reverse()
 
         for row in reverse_grid:
             for room in row:

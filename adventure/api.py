@@ -23,6 +23,7 @@ def create_world(request):
 
     w = World()
     w.generate_rooms(25, 25, 100)
+    w.print_rooms()
 
     type_items = ["hammer", "bat", "sword", "axe", "whip", "dagger", "club", "idol", "hamster"]
     item_adj = ["plastic", "metal", "golden", "suede", "marble", "velvet", "obsidian"]
