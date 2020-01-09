@@ -15,29 +15,54 @@ import random
 # instantiate pusher
 # pusher = Pusher(app_id=config('PUSHER_APP_ID'), key=config('PUSHER_KEY'), secret=config('PUSHER_SECRET'), cluster=config('PUSHER_CLUSTER'))
 
+"""
+POST /api/adv/createworld/
+HEADER Authorization: Token <token>
+REQUEST: No Body
+RETURNS:
+[
+    {
+        "id": 1,
+        "room_type": 1,
+        "grid_x": 15,
+        "grid_y": 20,
+        "players": ['player1', 'player2'],
+        "room_items": ['item1', 'item2']
+    },
+    {
+        ....
+    }
+]
+"""
 @api_view(["POST"])
 @permission_classes((permissions.IsAdminUser,))
 def create_world(request):
+    # Delete existing rooms and items
     Room.objects.all().delete()
     Item.objects.all().delete()
 
+    # Reset all players to Room 1
     for player in Player.objects.all():
         player.location = 1
         player.save()
 
+    # Create a World instance and generate rooms
     w = World()
     w.generate_rooms(25, 25, 100)
     w.print_rooms()
 
+    # Generate random item names and placements
     type_items = ["hammer", "bat", "sword", "axe", "whip", "dagger", "club", "idol", "hamster"]
     item_adj = ["plastic", "metal", "golden", "suede", "marble", "velvet", "obsidian"]
     items = [None] * 12
 
     for i in range(12):
+        # Check random names against current item list. If duplicate, generate another
         while True:
             s = f"{random.choice(item_adj)} {random.choice(type_items)}"
             if s not in items:
                 break
+        # Place in a random world
         item = Item(name=s, room_id=random.randint(1, 100))
         item.save()
         items.append(s)
@@ -71,8 +96,7 @@ def create_world(request):
     exit_room.description = "Locked Room"
     exit_room.save()
 
-
-
+    # Generate a list of all rooms and contents
     response = []
     rooms = list(Room.objects.all())
     for room in rooms:
@@ -84,10 +108,28 @@ def create_world(request):
             'players': room.playerNames(),
             'room_items': room.roomItemNames()
         })
-
+    # Return the rooms list
     return JsonResponse(response, safe=False)
 
-
+"""
+GET /api/adv/map/:id/ # Returns all rooms or a single room if ID is included
+HEADER None
+REQUEST: No Body
+RETURNS:
+[
+    {
+        "id": 1,
+        "room_type": 1,
+        "grid_x": 15,
+        "grid_y": 20,
+        "players": ['player1', 'player2'],
+        "room_items": ['item1', 'item2']
+    },
+    {
+        ....
+    }
+]
+"""
 @api_view(["GET"])
 @permission_classes((permissions.AllowAny,))
 def get_map(request, room_id=None):
@@ -182,6 +224,8 @@ def move(request):
         nextRoomID = room.room_right
     elif direction == "l":
         nextRoomID = room.room_left
+
+    print(nextRoomID)
     if nextRoomID is not None and nextRoomID > 0:
         nextRoom = Room.objects.get(id=nextRoomID)
         player.location=nextRoomID
@@ -196,16 +240,26 @@ def move(request):
         #     pusher.trigger(f'p-channel-{p_uuid}', u'broadcast', {'message':f'{player.user.username} has walked {dirs[direction]}.'})
         # for p_uuid in nextPlayerUUIDs:
         #     pusher.trigger(f'p-channel-{p_uuid}', u'broadcast', {'message':f'{player.user.username} has entered from the {reverse_dirs[direction]}.'})
+        error_message = ""
+        if nextRoom.room_type == '5':
+            if "exit key" not in player.playerItemNames():
+                nextRoom = room
+                next_room_items = room.roomItemNames()
+                error_message = "It's locked and you don't have the key."
+            else:
+                error_message = "You win!"
         return JsonResponse({
             'name':player.user.username, 
             'room_id': nextRoom.id, 
-            'room_type':nextRoom.room_type, 
-            'description':nextRoom.description, 
-            'grid_x':nextRoom.grid_x,
-            'grid_y':nextRoom.grid_y,
-            'room_items':next_room_items,
-            'player_items':player_items,
-            'players':players, 'error_msg':""}, safe=True)
+            'room_type': nextRoom.room_type, 
+            'description': nextRoom.description, 
+            'grid_x': nextRoom.grid_x,
+            'grid_y': nextRoom.grid_y,
+            'room_items': next_room_items,
+            'player_items': player_items,
+            'players': players,
+            'error_msg': error_message
+        }, safe=True)
     else:
         room_items = room.roomItemNames()
         player_items = player.playerItemNames()
