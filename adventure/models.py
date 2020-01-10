@@ -75,6 +75,13 @@ class Player(models.Model):
             self.initialize()
             return self.room()
 
+    def item(self):
+        try:
+            return Item.objects.filter(player_id=self.user.id)
+        except Item.DoesNotExist:
+            self.initialize()
+            return self.item()
+
     def getItem(self, item):
         return Item.objects.get(name=item)
     ###############################################
