@@ -15,7 +15,7 @@ class Room(models.Model):
     room_type = models.CharField(max_length=50, default="ROOM")
     # title = models.CharField(max_length=50, default="DEFAULT TITLE")
     description = models.CharField(
-        max_length=500, default="DEFAULT DESCRIPTION")
+        max_length=500, default="Pathway")
     room_up = models.IntegerField(default=0)
     room_down = models.IntegerField(default=0)
     room_right = models.IntegerField(default=0)
