@@ -309,7 +309,7 @@ def move(request):
             'name':player.user.username, 
             'room_id': nextRoom.id, 
             'room_type': nextRoom.room_type, 
-            'description': nextRoom.description, 
+            'description': description, 
             'grid_x': nextRoom.grid_x,
             'grid_y': nextRoom.grid_y,
             'room_items': next_room_items,
