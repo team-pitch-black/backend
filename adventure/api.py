@@ -297,12 +297,14 @@ def move(request):
         #     pusher.trigger(f'p-channel-{p_uuid}', u'broadcast', {'message':f'{player.user.username} has entered from the {reverse_dirs[direction]}.'})
         
         # Player can only enter the locked room if they have the key
+        description = nextRoom.description
         error_message = ""
         if nextRoom.room_type == '5':
             if "exit key" not in player.playerItemNames():
                 error_message = "The exit is locked and you don't have the key."
             else:
                 error_message = "You win!"
+                description = "You win!"
         return JsonResponse({
             'name':player.user.username, 
             'room_id': nextRoom.id, 
