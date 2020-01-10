@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.auth.models import User
-# from users.models import CustomUser
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
@@ -20,14 +19,8 @@ class Room(models.Model):
     room_down = models.IntegerField(default=0)
     room_right = models.IntegerField(default=0)
     room_left = models.IntegerField(default=0)
-    # players = []
-    # players_list = models.TextField(default=json.dumps({}))
-    # items = []
-    # items_list = models.TextField(default=json.dumps({}))
     grid_x = models.IntegerField(default=None)
     grid_y = models.IntegerField(default=None)
-    # def __repr__(self):
-    #     pass
 
     ################ These were provided ################
     def get_room_in_direction(self, direction):
@@ -52,54 +45,15 @@ class Room(models.Model):
         setattr(connecting_room, f"room_{reverse_dir}", self.id)
         connecting_room.save()
 
-        # print(self.id, direction, getattr(self, f"room_{direction}"), connecting_room.id, reverse_dir, getattr(connecting_room, f"room_{reverse_dir}"))
-
     def playerNames(self):
         return [p.user.username for p in Player.objects.filter(location=self.id)] #if p.id != int(currentPlayerID)
 
     def playerUUIDs(self):
         return [p.uuid for p in Player.objects.filter(location=self.id)] #if p.id != int(currentPlayerID)
     #####################################################
-    
 
     def roomItemNames(self):
         return [i.name for i in Item.objects.filter(room_id=self.id)] #if p.id != int(currentPlayerID)
-
-    def player_entered(self, player):
-        self.players.append(player)
-    # def player_entered(self, player):
-    #     self.players.append(player)
-    #     self.players_list = json.dumps([player.user.username for player in players])
-    #     self.save()
-
-    # def player_departed(self, player):
-    #     self.players.remove(player)
-    #     self.players_list = json.dumps([player.user.username for player in players])
-    #     self.save()
-
-    def add_item(self, item):
-        self.items.append(item)
-        self.save()
-
-    def remove_item(self, item):
-        self.items.remove(item)
-        self.save()
-
-    def set_room_up(self, room):
-        self.room_up = room
-        self.save()
-
-    def set_room_down(self, room):
-        self.room_down = room
-        self.save()
-
-    def set_room_left(self, room):
-        self.room_left = room
-        self.save()
-
-    def set_room_right(self, room):
-        self.room_right = room
-        self.save()
 
 
 class Player(models.Model):
@@ -121,55 +75,14 @@ class Player(models.Model):
             self.initialize()
             return self.room()
 
-    def item(self):
-        try:
-            return Item.objects.filter(player_id=self.user.id)
-        except Item.DoesNotExist:
-            self.initialize()
-            return self.item()
-
     def getItem(self, item):
         return Item.objects.get(name=item)
     ###############################################
-
-    # def __str__(self):
-    #     return self.username
     
     def playerItemNames(self):
         return [i.name for i in Item.objects.filter(player_id=self.user.id)] #if p.id != int(currentPlayerID)
 
-    # Get the room object from the location integer
-    def get_room(self, id):
-        return Room.objects.get(id=self.location)
 
-    def get_items(self):
-        return Item.objects.filter(player_id=self.user.id)
-
-    def move_up(self):
-        self.location.player_departed(self)
-        self.location = self.location.room_up
-        self.location.player_entered(self)
-
-    def move_down(self):
-        self.location.player_departed(self)
-        self.location = self.location.room_down
-        self.location.player_entered(self)
-
-    def move_right(self):
-        self.location.player_departed(self)
-        self.location = self.location.room_right
-        self.location.player_entered(self)
-
-    def move_left(self):
-        self.location.player_departed(self)
-        self.location = self.location.room_left
-        self.location.player_entered(self)
-
-    def grab_item(self, item):
-        self.items.append(item)
-
-    def drop_item(self, item):
-        self.items.remove(item)
 
 
 @receiver(post_save, sender=User)
@@ -201,15 +114,17 @@ class World:
 
     def generate_rooms(self, size_x, size_y, num_rooms):
         '''
-        Algorithm to be described once it's working
+        Wander around randomly to create a dungeon
         '''
 
+        # If coordinate outside the grid, return previous value
         def limit(new, orig, maximum):
             if new < 0 or new >= maximum:
                 return orig
             else:
                 return new
 
+        # Link rooms between two points horizontally
         def draw_horizontal(x1, x2, y):
             if x1 == x2:
                 return
@@ -219,6 +134,7 @@ class World:
                     self.room_count += 1
                     self.grid[y][x] = self.room_count
 
+        # Link rooms between two points horizontally
         def draw_vertical(y1, y2, x):
             if y1 == y2:
                 return
@@ -226,16 +142,6 @@ class World:
                 if self.grid[y][x] == 0:
                     self.room_count += 1
                     self.grid[y][x] = self.room_count
-
-        def random_direction(room):
-            directions = ["up", "down", "left", "right"]
-            open_paths = [(x, room.get_room_in_direction(x)) for x in directions if room.get_room_in_direction(x) == 0]
-            print(open_paths)
-            input()
-            if (len(open_paths)):
-                return random.choice(open_paths)
-            else:
-                return random.choice(directions)
 
         # Initialize the grid
         self.grid = [0] * size_y
@@ -253,20 +159,12 @@ class World:
         self.current_room = Room(id=1, room_type=1, grid_x=x, grid_y=y)
         self.grid[y][x] = 1
 
+        # Loop until we've made enough rooms
         while self.room_count < num_rooms:
 
-            # offset_x, offset_y = random.choice([(0, 1), (0, -1), (-1, 0), (1, 0)])
-            # new_x, new_y = limit(x+offset_x, x, size_x), limit(y+offset_y, y, size_y)
-            # print(x, y, new_x, new_y, self.grid[new_y][new_x])
-            # if (new_x != x or new_y != y) and self.grid[new_y][new_x] == 0:
-            #     self.room_count += 1
-            #     self.grid[new_y][new_x] = self.room_count
-            # x, y = new_x, new_y
-
-            # self.print_rooms()
-            # input()
-
-            offset = random.choice([-3, 1, 3])
+            # Pick a random distance to move in one direction
+            offset = random.choice([-5, -2, 1, 2, 5])
+            # 50% chance of going sideways or up/down, at an offset of 1, 2, or 5 rooms
             if random.random() > 0.5:
                 new_x = limit(x+offset, x, size_x)
                 draw_horizontal(x, new_x, y)
@@ -275,13 +173,13 @@ class World:
                 new_y = limit(y+offset, y, size_y)
                 draw_vertical(y, new_y, x)
                 y = new_y
-
-            # self.print_rooms()
         
         print("Linking rooms... ", end="")
 
+        # Linking happens separately after building the map
         cache = {}
         def create_or_retrieve_room(id, x, y):
+            # If room not in cache, create a new room, otherwise return existing room
             if id in cache:
                 room = cache[id]
             else:
@@ -290,12 +188,15 @@ class World:
                 cache[id] = room
             return room
 
+        # Iterate over the grid
         for y in range(0, size_y):
             for x in range(0, size_x):
                 current_id = self.grid[y][x]
                 right_id = self.grid[y][x+1] if x + 1 < size_x else 0
                 down_id = self.grid[y+1][x] if y + 1 < size_y else 0
 
+                # Check right and down for rooms needing to be linked to the current one
+                # and connect them
                 if current_id:
                     current_room = create_or_retrieve_room(current_id, x, y)
                     if right_id:
@@ -317,10 +218,7 @@ class World:
         Print the rooms in room_grid in ascii characters.
         '''
 
-        reverse_grid = list(self.grid)  # make a copy of the list
-        # reverse_grid.reverse()
-
-        for row in reverse_grid:
+        for row in self.grid:
             for room in row:
                 if room != 0:
                     print(str(room).zfill(3), end=" ")
