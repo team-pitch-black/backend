@@ -47,8 +47,9 @@ def create_world(request):
         player.save()
 
     # Create a World instance and generate rooms
+    NUM_ROOMS = 200
     w = World()
-    w.generate_rooms(25, 25, 100)
+    w.generate_rooms(25, 25, NUM_ROOMS)
     w.print_rooms()
 
     # Generate random item names and placements
@@ -63,35 +64,35 @@ def create_world(request):
             if s not in items:
                 break
         # Place in a random world
-        item = Item(name=s, room_id=random.randint(1, 100))
+        item = Item(name=s, room_id=random.randint(1, NUM_ROOMS))
         item.save()
         items.append(s)
     
     # Place exit key
-    item = Item(name="exit key", room_id=100)
+    item = Item(name="exit key", room_id=NUM_ROOMS)
     item.save()
     # Place key room
-    key_room = Room.objects.filter(id=100)[0]
+    key_room = Room.objects.filter(id=NUM_ROOMS)[0]
     key_room.room_type = 4
     key_room.description = "Key Room"
     key_room.save()
     # Place monster room
-    monster_room = Room.objects.filter(id=70)[0]
+    monster_room = Room.objects.filter(id=NUM_ROOMS // 2)[0]
     monster_room.room_type = 3
     monster_room.description = "Monster Room"
     monster_room.save()
     # Place treasure room
-    treasure_room = Room.objects.filter(id=80)[0]
+    treasure_room = Room.objects.filter(id=NUM_ROOMS // 2 - 20)[0]
     treasure_room.room_type = 2
     treasure_room.description = "Treasure Room"
     treasure_room.save()
     # Place treasure
     treasures = ["Sword of Employment", "Armor of Code Challenge Prowess", "1138 LambdaCoin"]
     for treasure in treasures:
-        treasure_item = Item(name=treasure, room_id=80)
+        treasure_item = Item(name=treasure, room_id=NUM_ROOMS // 2 - 20)
         treasure_item.save()
     # Place exit room
-    exit_room = Room.objects.filter(id=50)[0]
+    exit_room = Room.objects.filter(id=150)[0]
     exit_room.room_type = 5
     exit_room.description = "Locked Room"
     exit_room.save()
@@ -299,9 +300,7 @@ def move(request):
         error_message = ""
         if nextRoom.room_type == '5':
             if "exit key" not in player.playerItemNames():
-                nextRoom = room
-                next_room_items = room.roomItemNames()
-                error_message = "It's locked and you don't have the key."
+                error_message = "The exit is locked and you don't have the key."
             else:
                 error_message = "You win!"
         return JsonResponse({
